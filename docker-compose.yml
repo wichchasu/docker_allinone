@@ -1,0 +1,77 @@
+version: "3.7"
+
+networks:
+  myserver.network:
+    driver: bridge
+
+services:
+  postgres:
+    # build: ./docker/postgres
+    image: postgres
+    container_name: myserver.postgres
+    tty: true
+    restart: always
+    networks:
+      - myserver.network
+    ports:
+      - "${POSTGRES_PORTS}:5432"
+    volumes:
+      - "./docker/postgres/dbdata:/var/lib/postgresql/data"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+  postgres_adminer:
+    image: adminer
+    restart: always
+    depends_on:
+      - postgres
+    ports:
+      - ${POSTGRES_ADMINER_PORTS}:8080
+
+  nodered:
+    image: nodered/node-red:latest
+    container_name: myserver.nodered
+    restart: always
+    ports:
+      - "${NODERED_PORTS}:1880"
+    volumes:
+      - ./docker/nodered/data:/data
+    networks:
+      - myserver.network
+
+  influxdb:
+    image: influxdb:latest
+    container_name: myserver.influxdb
+    restart: always
+    ports:
+      - "${INFLUXDB_PORTS}:8086"
+    networks:
+      - myserver.network
+    environment:
+      - INFLUXDB_DB=${INFLUXDB_DB}
+      - INFLUXDB_USER=${INFLUXDB_USER}
+      - INFLUXDB_USER_PASSWORD=${INFLUXDB_PASSWORD}
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: myserver.grafana
+    restart: always
+    ports:
+      - "${GRAFANA_PORTS}:3000"
+    networks:
+      - myserver.network
+
+  mongodb:
+    image: mongo:latest
+    container_name: myserver.mongodb
+    restart: always
+    ports:
+      - "${MONGODB_PORTS}:27017"
+    volumes:
+      - ./docker/mongodb/dbdata:/data/db 
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}  # กำหนดชื่อผู้ใช้ root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}  # กำหนดรหัสผ่าน root 
+    networks:
+      - myserver.network
